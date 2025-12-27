@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+
+        <!-- NuGet 包信息 -->
+        <PackageId>Tetris.EasyApiLogViewer.AspNetCore</PackageId>
+        <Version>0.9.0</Version>
+        <Title>Easy API Log Viewer</Title>
+        <Description>一个简单易用的 .NET WebAPI 请求日志记录和查看工具。支持 SQLite 和 SQL 数据库，提供内置的 Web UI 查看器，支持日志查询、统计和请求重放功能。</Description>
+        <Authors>Tetris</Authors>
+        <Copyright>Copyright (c) 2024 Tetris</Copyright>
+        <PackageTags>aspnetcore;logging;api;middleware;log-viewer;request-logging</PackageTags>
+        <PackageProjectUrl>https://github.com/tetrisKun/Tetris.EasyApiLogViewer</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/tetrisKun/Tetris.EasyApiLogViewer</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <!-- ASP.NET Core 框架引用 -->
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <!-- NuGet 包引用 -->
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.1" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.1" />
+      <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.7.1" />
+      <PackageReference Include="Tetris.EasyApiLogViewer.Db.Abstract" Version="1.0.0" />
+    </ItemGroup>
+
+    <!-- ApiAccessLog 嵌入式资源 -->
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\log-viewer.html" />
+    </ItemGroup>
+    <ItemGroup>
+      <Content Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <!-- NuGet 包文件 -->
+</Project>

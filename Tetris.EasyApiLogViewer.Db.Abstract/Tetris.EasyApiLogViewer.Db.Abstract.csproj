@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!-- NuGet 包信息 -->
+        <PackageId>Tetris.EasyApiLogViewer.Db.Abstract</PackageId>
+        <Version>1.0.0</Version>
+        <Title>Easy API Log Viewer - Database Abstractions</Title>
+        <Description>数据库抽象层，定义了 Tetris.EasyApiLogViewer 的数据库仓储接口和数据模型。</Description>
+        <Authors>Tetris</Authors>
+        <Copyright>Copyright (c) 2025 Tetris</Copyright>
+        <PackageTags>aspnetcore;logging;api;database;abstractions;repository</PackageTags>
+        <PackageProjectUrl>https://github.com/tetrisKun/Tetris.EasyApiLogViewer</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/tetrisKun/Tetris.EasyApiLogViewer</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <TargetFrameworks>net8.0;net6.0;netstandard2.0;netstandard2.1</TargetFrameworks>
+    </PropertyGroup>
+
+</Project>

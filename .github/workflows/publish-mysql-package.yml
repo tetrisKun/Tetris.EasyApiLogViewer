@@ -1,0 +1,57 @@
+name: Publish MySQL Provider to NuGet
+
+on:
+  push:
+    tags:
+      - 'mysql-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/mysql-v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Using version: $VERSION"
+
+      - name: Update csproj version
+        run: |
+          sed -i "s|<Version>.*</Version>|<Version>${{ steps.version.outputs.VERSION }}</Version>|" Tetris.EasyApiLogViewer.Db.MySql/Tetris.EasyApiLogViewer.Db.MySql.csproj
+          echo "Updated csproj:"
+          grep "<Version>" Tetris.EasyApiLogViewer.Db.MySql/Tetris.EasyApiLogViewer.Db.MySql.csproj
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore
+
+      - name: Pack
+        run: dotnet pack Tetris.EasyApiLogViewer.Db.MySql/Tetris.EasyApiLogViewer.Db.MySql.csproj -c Release --no-build -o ./nupkgs
+
+      - name: List packages
+        run: ls -la ./nupkgs
+
+      - name: Push to NuGet
+        run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./nupkgs/*.nupkg
+          generate_release_notes: true

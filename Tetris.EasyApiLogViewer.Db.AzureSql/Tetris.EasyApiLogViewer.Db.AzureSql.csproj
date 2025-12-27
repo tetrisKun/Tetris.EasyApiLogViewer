@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AssemblyName>Tetris.EasyApiLogViewer.Db.AzureSql</AssemblyName>
+        <RootNamespace>Tetris.EasyApiLogViewer.Db.AzureSql</RootNamespace>
+
+        <!-- NuGet 包信息 -->
+        <PackageId>Tetris.EasyApiLogViewer.Db.AzureSql</PackageId>
+        <Version>0.9.0</Version>
+        <Title>Easy API Log Viewer - Azure SQL Provider</Title>
+        <Description>Azure SQL 数据库提供程序，用于 Tetris.EasyApiLogViewer 的数据持久化。</Description>
+        <Authors>Tetris</Authors>
+        <Copyright>Copyright (c) 2025 Tetris</Copyright>
+        <PackageTags>aspnetcore;logging;api;azure;sql;database</PackageTags>
+        <PackageProjectUrl>https://github.com/tetrisKun/Tetris.EasyApiLogViewer</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/tetrisKun/Tetris.EasyApiLogViewer</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.3" />
+      <PackageReference Include="Tetris.EasyApiLogViewer.Db.Abstract" Version="1.0.0" />
+    </ItemGroup>
+
+</Project>

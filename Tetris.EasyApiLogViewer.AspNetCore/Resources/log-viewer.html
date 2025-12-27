@@ -1,0 +1,2057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Log Viewer</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --color-primary: #667eea;
+            --color-primary-dark: #5a6fd6;
+            --color-gray-50: #f9fafb;
+            --color-gray-100: #f3f4f6;
+            --color-gray-200: #e5e7eb;
+            --color-gray-300: #d1d5db;
+            --color-gray-500: #6b7280;
+            --color-gray-600: #4b5563;
+            --color-gray-700: #374151;
+            --color-gray-800: #1f2937;
+            --color-green-100: #dcfce7;
+            --color-green-800: #166534;
+            --color-blue-100: #dbeafe;
+            --color-blue-800: #1e40af;
+            --color-yellow-100: #fef9c3;
+            --color-yellow-800: #854d0e;
+            --color-red-50: #fef2f2;
+            --color-red-100: #fee2e2;
+            --color-red-600: #dc2626;
+            --color-red-800: #991b1b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--color-gray-100);
+            color: var(--color-gray-800);
+            line-height: 1.5;
+        }
+
+        .hidden { display: none !important; }
+
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .login-box {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 28rem;
+        }
+
+        .login-box h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-gray-800);
+            margin-bottom: 0.5rem;
+        }
+
+        .login-box p {
+            text-align: center;
+            color: var(--color-gray-500);
+            margin-bottom: 2rem;
+            font-size: 0.875rem;
+        }
+
+        .login-error {
+            background: var(--color-red-50);
+            color: var(--color-red-600);
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.875rem;
+        }
+
+        .form-group { margin-bottom: 1.25rem; }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--color-gray-600);
+            font-size: 0.875rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--color-gray-200);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Language Selector */
+        .lang-selector {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.25rem;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem;
+            border-radius: 0.375rem;
+        }
+
+        .lang-btn {
+            padding: 0.375rem 0.75rem;
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 0.25rem;
+            transition: background 0.2s;
+        }
+
+        .lang-btn:hover { background: rgba(255, 255, 255, 0.2); }
+        .lang-btn.active { background: rgba(255, 255, 255, 0.3); }
+
+        .lang-selector-main {
+            position: static;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Main Content */
+        .main-content { padding: 1.25rem; }
+
+        .container {
+            max-width: 80rem;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .header-top h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-logout:hover { background: rgba(255, 255, 255, 0.3); }
+
+        .btn-change-password {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-change-password:hover { background: rgba(255, 255, 255, 0.25); }
+
+        .stats-bar {
+            display: flex;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+        }
+
+        /* Filters */
+        .filters {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .filter-group label {
+            font-size: 0.75rem;
+            color: var(--color-gray-500);
+            font-weight: 500;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--color-gray-300);
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        .filter-group input[type="number"] { width: 6rem; }
+
+        .btn {
+            padding: 0.5rem 1.25rem;
+            border: none;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover { background: var(--color-primary-dark); }
+
+        .btn-secondary {
+            background: var(--color-gray-500);
+            color: white;
+        }
+
+        .btn-secondary:hover { background: var(--color-gray-600); }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover { background: #059669; }
+
+        /* Table */
+        .log-table {
+            background: white;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--color-gray-50);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-gray-500);
+            text-transform: uppercase;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--color-gray-100);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        tbody tr:hover { background: var(--color-gray-50); }
+
+        .cell-path {
+            font-family: ui-monospace, monospace;
+            font-size: 0.875rem;
+            max-width: 20rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .cell-duration {
+            font-family: ui-monospace, monospace;
+            color: var(--color-gray-500);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-get { background: var(--color-green-100); color: var(--color-green-800); }
+        .badge-post { background: var(--color-blue-100); color: var(--color-blue-800); }
+        .badge-put { background: var(--color-yellow-100); color: var(--color-yellow-800); }
+        .badge-delete { background: var(--color-red-100); color: var(--color-red-800); }
+        .badge-patch { background: var(--color-gray-200); color: var(--color-gray-700); }
+
+        .badge-2xx { background: var(--color-green-100); color: var(--color-green-800); }
+        .badge-3xx { background: var(--color-blue-100); color: var(--color-blue-800); }
+        .badge-4xx { background: var(--color-yellow-100); color: var(--color-yellow-800); }
+        .badge-5xx { background: var(--color-red-100); color: var(--color-red-800); }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1.25rem;
+            background: white;
+            border-top: 1px solid var(--color-gray-100);
+        }
+
+        .pagination span { color: var(--color-gray-500); }
+
+        /* Loading & Empty */
+        .loading, .no-data {
+            text-align: center;
+            padding: 2.5rem;
+            color: var(--color-gray-500);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            padding: 2rem;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 0.5rem;
+            width: calc(100% - 4rem);
+            max-width: 56rem;
+            height: calc(100vh - 4rem);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--color-gray-200);
+            background: white;
+            flex-shrink: 0;
+        }
+
+        .modal-header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .modal-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--color-gray-500);
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-close:hover { color: var(--color-gray-700); }
+
+        .modal-body {
+            padding: 1.25rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-item {
+            background: var(--color-gray-50);
+            padding: 0.75rem 1rem;
+            border-radius: 0.25rem;
+        }
+
+        .detail-item label {
+            font-size: 0.75rem;
+            color: var(--color-gray-500);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-item span { font-weight: 500; }
+
+        .detail-section {
+            margin-bottom: 0.75rem;
+            border: 1px solid var(--color-gray-200);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .detail-section h3 {
+            font-size: 0.875rem;
+            color: var(--color-gray-700);
+            font-weight: 600;
+            text-transform: uppercase;
+            margin: 0;
+            padding: 0.75rem 1rem;
+            background: var(--color-gray-50);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .detail-section pre {
+            background: var(--color-gray-50);
+            padding: 1rem;
+            border-top: 1px solid var(--color-gray-200);
+            font-size: 0.875rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin: 0;
+        }
+
+        /* Inline section (path, empty request body) */
+        .path-inline {
+            margin-bottom: 0.75rem;
+            border: 1px solid var(--color-gray-200);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .path-inline-label {
+            width: 10rem;
+            flex-shrink: 0;
+            font-size: 0.875rem;
+            color: var(--color-gray-700);
+            font-weight: 600;
+            text-transform: uppercase;
+            padding: 0.75rem 1rem;
+            background: var(--color-gray-100);
+            border-right: 1px solid var(--color-gray-200);
+        }
+
+        .path-inline-value {
+            flex: 1;
+            font-family: ui-monospace, monospace;
+            font-size: 0.875rem;
+            color: var(--color-gray-800);
+            padding: 0.75rem 1rem;
+            background: white;
+            word-break: break-all;
+        }
+
+        .path-inline .badge-empty {
+            margin-left: 1rem;
+            background: var(--color-gray-200);
+            color: var(--color-gray-500);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-weight: 500;
+        }
+
+        /* Collapsible Section */
+        .collapsible-section {
+            margin-bottom: 0.75rem;
+            border: 1px solid var(--color-gray-200);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .collapsible-header {
+            display: flex;
+            align-items: stretch;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .collapsible-header h3 {
+            width: 10rem;
+            flex-shrink: 0;
+            font-size: 0.875rem;
+            color: var(--color-gray-700);
+            font-weight: 600;
+            text-transform: uppercase;
+            margin: 0;
+            padding: 0.75rem 1rem;
+            background: var(--color-gray-100);
+            border-right: 1px solid var(--color-gray-200);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .collapsible-header:hover h3 {
+            background: var(--color-gray-200);
+        }
+
+        .collapsible-header-spacer {
+            flex: 1;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 1rem;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .collapsible-header:hover .collapsible-header-spacer {
+            background: var(--color-gray-50);
+        }
+
+        .collapsible-header .toggle-icon {
+            font-size: 0.75rem;
+            color: var(--color-gray-500);
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .collapsible-section.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .collapsible-header .badge-empty {
+            background: var(--color-gray-200);
+            color: var(--color-gray-500);
+            font-size: 0.625rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-weight: 500;
+            text-transform: lowercase;
+        }
+
+        .collapsible-content {
+            padding: 1rem;
+            border-top: 1px solid var(--color-gray-200);
+        }
+
+        .collapsible-section.collapsed .collapsible-content {
+            display: none;
+        }
+
+        .collapsible-content pre {
+            background: var(--color-gray-50);
+            padding: 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin: 0;
+        }
+
+        /* Replay Section */
+        .replay-section {
+            background: var(--color-blue-100);
+            padding: 1rem;
+            border-radius: 0.25rem;
+            margin-top: 1rem;
+        }
+
+        .replay-section h3 {
+            color: var(--color-blue-800);
+            margin-bottom: 0.75rem;
+        }
+
+        .replay-result {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            margin-top: 0.75rem;
+        }
+
+        .replay-result pre {
+            background: var(--color-gray-50);
+            padding: 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            max-height: 200px;
+            overflow: auto;
+        }
+
+        /* JWT Decoder Section */
+        .jwt-section {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            margin-top: 0.75rem;
+        }
+
+        .jwt-section h4 {
+            color: #92400e;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .jwt-section h4::before {
+            content: '🔐';
+        }
+
+        .jwt-part {
+            margin-bottom: 0.75rem;
+        }
+
+        .jwt-part:last-child {
+            margin-bottom: 0;
+        }
+
+        .jwt-part-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #78350f;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+        }
+
+        .jwt-part pre {
+            background: white;
+            padding: 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            overflow-x: auto;
+            border: 1px solid #fcd34d;
+            margin: 0;
+        }
+
+        .jwt-invalid {
+            color: #dc2626;
+            font-style: italic;
+        }
+
+        .jwt-claim-highlight {
+            background: #fef08a;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.125rem;
+        }
+
+        /* JWT Tool Button */
+        .btn-jwt {
+            background: #f59e0b;
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .btn-jwt:hover {
+            background: #d97706;
+        }
+
+        /* JWT Tool Modal */
+        .jwt-tool-section {
+            background: var(--color-gray-50);
+            padding: 1rem;
+            border-radius: 0.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .jwt-tool-section textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 0.75rem;
+            border: 1px solid var(--color-gray-300);
+            border-radius: 0.25rem;
+            font-family: ui-monospace, monospace;
+            font-size: 0.875rem;
+            resize: vertical;
+            margin-bottom: 0.75rem;
+        }
+
+        .jwt-tool-section textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        /* Change Password Modal */
+        .change-password-modal .modal-content {
+            height: auto;
+            max-width: 28rem;
+        }
+
+        .change-password-form {
+            padding: 1.5rem;
+        }
+
+        .change-password-form .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .change-password-form .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--color-gray-600);
+            font-size: 0.875rem;
+        }
+
+        .change-password-form .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--color-gray-200);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+
+        .change-password-form .form-group input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        .change-password-error {
+            background: var(--color-red-50);
+            color: var(--color-red-600);
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .change-password-success {
+            background: var(--color-green-100);
+            color: var(--color-green-800);
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .change-password-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .change-password-actions button {
+            flex: 1;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .change-password-actions .btn-primary {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+        }
+
+        .change-password-actions .btn-primary:hover {
+            background: var(--color-primary-dark);
+        }
+
+        .change-password-actions .btn-secondary {
+            background: var(--color-gray-200);
+            color: var(--color-gray-700);
+            border: none;
+        }
+
+        .change-password-actions .btn-secondary:hover {
+            background: var(--color-gray-300);
+        }
+
+        .change-password-actions .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="lang-selector">
+            <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn" onclick="setLanguage('zh')">中文</button>
+            <button class="lang-btn" onclick="setLanguage('ja')">日本語</button>
+        </div>
+        <div class="login-box">
+            <h1 data-i18n="title">Access Log Viewer</h1>
+            <p data-i18n="loginSubtitle">Please login with your admin account</p>
+            <div class="login-error hidden" id="loginError"></div>
+            <div class="form-group">
+                <label for="usernameInput" data-i18n="username">Username</label>
+                <input type="text" id="usernameInput" placeholder="admin" autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label for="passwordInput" data-i18n="password">Password</label>
+                <input type="password" id="passwordInput" placeholder="********" autocomplete="current-password">
+            </div>
+            <button class="btn-login" onclick="login()" data-i18n="loginBtn">Login</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content hidden" id="mainContent">
+        <div class="container">
+            <header>
+                <div class="header-top">
+                    <h1 data-i18n="title">Access Log Viewer</h1>
+                    <div class="header-actions">
+                        <span class="user-info" id="userInfo"></span>
+                        <div class="lang-selector lang-selector-main">
+                            <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+                            <button class="lang-btn" onclick="setLanguage('zh')">中文</button>
+                            <button class="lang-btn" onclick="setLanguage('ja')">日本語</button>
+                        </div>
+                        <button class="btn-change-password" onclick="showChangePasswordModal()" data-i18n="changePassword">Change Password</button>
+                        <button class="btn-logout" onclick="logout()" data-i18n="logout">Logout</button>
+                    </div>
+                </div>
+                <div class="stats-bar" id="statsBar">
+                    <div class="stat-item"><span data-i18n="totalRequests">Total Requests</span>: <strong id="totalRequests">-</strong></div>
+                    <div class="stat-item"><span data-i18n="avgDuration">Avg Duration</span>: <strong id="avgDuration">-</strong> ms</div>
+                </div>
+            </header>
+
+            <div class="filters">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label data-i18n="method">Method</label>
+                        <select id="filterMethod">
+                            <option value="" data-i18n="all">All</option>
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                            <option value="PATCH">PATCH</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label data-i18n="path">Path</label>
+                        <input type="text" id="filterPath" placeholder="/api/...">
+                    </div>
+                    <div class="filter-group">
+                        <label data-i18n="statusCode">Status Code</label>
+                        <input type="number" id="filterStatusCode" placeholder="200">
+                    </div>
+                    <div class="filter-group">
+                        <label data-i18n="startDate">Start Date</label>
+                        <input type="datetime-local" id="filterStartDate">
+                    </div>
+                    <div class="filter-group">
+                        <label data-i18n="endDate">End Date</label>
+                        <input type="datetime-local" id="filterEndDate">
+                    </div>
+                    <div class="filter-group">
+                        <label data-i18n="pageSize">Page Size</label>
+                        <select id="filterPageSize" onchange="onPageSizeChange()">
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="loadLogs(1)" data-i18n="search">Search</button>
+                    <button class="btn btn-secondary" onclick="clearFilters()" data-i18n="clear">Clear</button>
+                </div>
+            </div>
+
+            <div class="log-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th data-i18n="timestamp">Timestamp</th>
+                            <th data-i18n="method">Method</th>
+                            <th data-i18n="path">Path</th>
+                            <th data-i18n="status">Status</th>
+                            <th data-i18n="duration">Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody">
+                        <tr><td colspan="6" class="loading" data-i18n="loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal hidden" id="detailModal">
+        <div class="modal-wrapper">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-header-left">
+                        <h2 data-i18n="logDetail">Log Detail</h2>
+                    </div>
+                    <div class="modal-header-actions">
+                        <button class="btn btn-secondary" id="copyCurlBtn" onclick="copyCurlCommand()" data-i18n="copyCurl">Copy CURL</button>
+                        <button class="btn btn-success" id="replayBtn" onclick="replayCurrentRequest()" data-i18n="replay">Replay</button>
+                        <button class="modal-close" onclick="closeModal()">&times;</button>
+                    </div>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <div class="loading" data-i18n="loading">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal hidden change-password-modal" id="changePasswordModal">
+        <div class="modal-wrapper">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-header-left">
+                        <h2 data-i18n="changePassword">Change Password</h2>
+                    </div>
+                    <button class="modal-close" onclick="closeChangePasswordModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="change-password-form">
+                        <div id="changePasswordMessage" class="hidden"></div>
+                        <div class="form-group">
+                            <label for="currentPassword" data-i18n="currentPassword">Current Password</label>
+                            <input type="password" id="currentPassword" placeholder="••••••••">
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword" data-i18n="newPassword">New Password</label>
+                            <input type="password" id="newPassword" placeholder="••••••••">
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword" data-i18n="confirmPassword">Confirm New Password</label>
+                            <input type="password" id="confirmPassword" placeholder="••••••••">
+                        </div>
+                        <div class="change-password-actions">
+                            <button class="btn-secondary" onclick="closeChangePasswordModal()" data-i18n="cancel">Cancel</button>
+                            <button class="btn-primary" id="changePasswordBtn" onclick="changePassword()" data-i18n="confirm">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // i18n translations
+        const translations = {
+            en: {
+                title: 'Access Log Viewer',
+                loginSubtitle: 'Please login with your admin account',
+                username: 'Username',
+                password: 'Password',
+                loginBtn: 'Login',
+                logout: 'Logout',
+                invalidCredentials: 'Invalid username or password',
+                enterCredentials: 'Please enter username and password',
+                connectionError: 'Connection error. Please try again.',
+                sessionExpired: 'Session expired. Please login again.',
+                totalRequests: 'Total Requests',
+                avgDuration: 'Avg Duration',
+                method: 'Method',
+                path: 'Path',
+                statusCode: 'Status Code',
+                startDate: 'Start Date',
+                endDate: 'End Date',
+                pageSize: 'Page Size',
+                search: 'Search',
+                clear: 'Clear',
+                all: 'All',
+                timestamp: 'Timestamp',
+                status: 'Status',
+                duration: 'Duration',
+                loading: 'Loading...',
+                noLogs: 'No logs found',
+                loadFailed: 'Failed to load logs',
+                logDetail: 'Log Detail',
+                requestId: 'Request ID',
+                clientIp: 'Client IP',
+                requestHeaders: 'Request Headers',
+                requestBody: 'Request Body',
+                responseBody: 'Response Body',
+                empty: '(empty)',
+                total: 'Total',
+                records: 'records',
+                page: 'Page',
+                of: 'of',
+                prev: 'Prev',
+                next: 'Next',
+                replay: 'Replay',
+                replayConfirm: 'Are you sure you want to replay this request?',
+                replayResult: 'Replay Result',
+                replaying: 'Replaying...',
+                jwtDecoded: 'JWT Decoded',
+                jwtHeader: 'Header',
+                jwtPayload: 'Payload',
+                jwtSignature: 'Signature',
+                jwtInvalid: 'Invalid JWT format',
+                jwtExpired: 'Token Expired',
+                jwtValid: 'Token Valid',
+                jwtIssuedAt: 'Issued At',
+                jwtExpiresAt: 'Expires At',
+                jwtUserId: 'User ID',
+                copyCurl: 'Copy CURL',
+                curlCopied: 'CURL command copied to clipboard',
+                curlCopyFailed: 'Failed to copy CURL command',
+                changePassword: 'Change Password',
+                currentPassword: 'Current Password',
+                newPassword: 'New Password',
+                confirmPassword: 'Confirm New Password',
+                cancel: 'Cancel',
+                confirm: 'Confirm',
+                passwordChanged: 'Password changed successfully',
+                passwordChangeFailed: 'Failed to change password',
+                currentPasswordError: 'Current password is incorrect',
+                newPasswordTooShort: 'New password must be at least 6 characters',
+                passwordsNotMatch: 'New password and confirmation do not match',
+                allFieldsRequired: 'All fields are required'
+            },
+            zh: {
+                title: '访问日志查看器',
+                loginSubtitle: '请使用管理员账户登录',
+                username: '用户名',
+                password: '密码',
+                loginBtn: '登录',
+                logout: '登出',
+                invalidCredentials: '用户名或密码错误',
+                enterCredentials: '请输入用户名和密码',
+                connectionError: '连接错误，请重试。',
+                sessionExpired: '会话已过期，请重新登录。',
+                totalRequests: '总请求数',
+                avgDuration: '平均耗时',
+                method: '方法',
+                path: '路径',
+                statusCode: '状态码',
+                startDate: '开始日期',
+                endDate: '结束日期',
+                pageSize: '每页数量',
+                search: '搜索',
+                clear: '清除',
+                all: '全部',
+                timestamp: '时间',
+                status: '状态',
+                duration: '耗时',
+                loading: '加载中...',
+                noLogs: '未找到日志',
+                loadFailed: '加载日志失败',
+                logDetail: '日志详情',
+                requestId: '请求ID',
+                clientIp: '客户端IP',
+                requestHeaders: '请求头',
+                requestBody: '请求体',
+                responseBody: '响应体',
+                empty: '(空)',
+                total: '共',
+                records: '条记录',
+                page: '第',
+                of: '页，共',
+                prev: '上一页',
+                next: '下一页',
+                replay: '重放',
+                replayConfirm: '确定要重放此请求吗？',
+                replayResult: '重放结果',
+                replaying: '重放中...',
+                jwtDecoded: 'JWT 解析结果',
+                jwtHeader: '头部',
+                jwtPayload: '载荷',
+                jwtSignature: '签名',
+                jwtInvalid: '无效的JWT格式',
+                jwtExpired: 'Token已过期',
+                jwtValid: 'Token有效',
+                jwtIssuedAt: '签发时间',
+                jwtExpiresAt: '过期时间',
+                jwtUserId: '用户ID',
+                copyCurl: '复制CURL',
+                curlCopied: 'CURL命令已复制到剪贴板',
+                curlCopyFailed: '复制CURL命令失败',
+                changePassword: '修改密码',
+                currentPassword: '当前密码',
+                newPassword: '新密码',
+                confirmPassword: '确认新密码',
+                cancel: '取消',
+                confirm: '确认',
+                passwordChanged: '密码修改成功',
+                passwordChangeFailed: '密码修改失败',
+                currentPasswordError: '当前密码错误',
+                newPasswordTooShort: '新密码至少需要6个字符',
+                passwordsNotMatch: '新密码和确认密码不匹配',
+                allFieldsRequired: '所有字段都是必填的'
+            },
+            ja: {
+                title: 'アクセスログビューア',
+                loginSubtitle: '管理者アカウントでログインしてください',
+                username: 'ユーザー名',
+                password: 'パスワード',
+                loginBtn: 'ログイン',
+                logout: 'ログアウト',
+                invalidCredentials: 'ユーザー名またはパスワードが無効です',
+                enterCredentials: 'ユーザー名とパスワードを入力してください',
+                connectionError: '接続エラーです。再試行してください。',
+                sessionExpired: 'セッションが期限切れです。再度ログインしてください。',
+                totalRequests: '総リクエスト数',
+                avgDuration: '平均処理時間',
+                method: 'メソッド',
+                path: 'パス',
+                statusCode: 'ステータスコード',
+                startDate: '開始日時',
+                endDate: '終了日時',
+                pageSize: 'ページサイズ',
+                search: '検索',
+                clear: 'クリア',
+                all: 'すべて',
+                timestamp: '日時',
+                status: 'ステータス',
+                duration: '処理時間',
+                loading: '読み込み中...',
+                noLogs: 'ログが見つかりません',
+                loadFailed: 'ログの読み込みに失敗しました',
+                logDetail: 'ログ詳細',
+                requestId: 'リクエストID',
+                clientIp: 'クライアントIP',
+                requestHeaders: 'リクエストヘッダー',
+                requestBody: 'リクエストボディ',
+                responseBody: 'レスポンスボディ',
+                empty: '(空)',
+                total: '合計',
+                records: '件',
+                page: 'ページ',
+                of: '/',
+                prev: '前へ',
+                next: '次へ',
+                replay: '再実行',
+                replayConfirm: 'このリクエストを再実行しますか？',
+                replayResult: '再実行結果',
+                replaying: '再実行中...',
+                jwtDecoded: 'JWTデコード結果',
+                jwtHeader: 'ヘッダー',
+                jwtPayload: 'ペイロード',
+                jwtSignature: '署名',
+                jwtInvalid: '無効なJWT形式',
+                jwtExpired: 'トークン期限切れ',
+                jwtValid: 'トークン有効',
+                jwtIssuedAt: '発行日時',
+                jwtExpiresAt: '有効期限',
+                jwtUserId: 'ユーザーID',
+                copyCurl: 'CURL複製',
+                curlCopied: 'CURLコマンドをクリップボードにコピーしました',
+                curlCopyFailed: 'CURLコマンドのコピーに失敗しました',
+                changePassword: 'パスワード変更',
+                currentPassword: '現在のパスワード',
+                newPassword: '新しいパスワード',
+                confirmPassword: '新しいパスワード（確認）',
+                cancel: 'キャンセル',
+                confirm: '確認',
+                passwordChanged: 'パスワードを変更しました',
+                passwordChangeFailed: 'パスワードの変更に失敗しました',
+                currentPasswordError: '現在のパスワードが正しくありません',
+                newPasswordTooShort: '新しいパスワードは6文字以上である必要があります',
+                passwordsNotMatch: '新しいパスワードと確認が一致しません',
+                allFieldsRequired: 'すべての項目を入力してください'
+            }
+        };
+
+        let currentLang = localStorage.getItem('logViewerLang') || 'en';
+        let currentPage = 1;
+        let pageSize = 20;
+        let currentLogId = null;
+        let currentLogData = null;
+
+        function t(key) {
+            return translations[currentLang][key] || translations['en'][key] || key;
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('logViewerLang', lang);
+            document.documentElement.lang = lang;
+            updateUI();
+            updateLangButtons();
+        }
+
+        function updateLangButtons() {
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if ((btn.textContent === 'EN' && currentLang === 'en') ||
+                    (btn.textContent === '中文' && currentLang === 'zh') ||
+                    (btn.textContent === '日本語' && currentLang === 'ja')) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function updateUI() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = t(key);
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                el.placeholder = t(key);
+            });
+        }
+
+        function getMethodBadgeClass(method) {
+            const classes = { GET: 'badge-get', POST: 'badge-post', PUT: 'badge-put', DELETE: 'badge-delete', PATCH: 'badge-patch' };
+            return classes[method] || '';
+        }
+
+        function getStatusBadgeClass(statusCode) {
+            if (!statusCode) return '';
+            if (statusCode >= 200 && statusCode < 300) return 'badge-2xx';
+            if (statusCode >= 300 && statusCode < 400) return 'badge-3xx';
+            if (statusCode >= 400 && statusCode < 500) return 'badge-4xx';
+            if (statusCode >= 500) return 'badge-5xx';
+            return '';
+        }
+
+        function getToken() { return sessionStorage.getItem('logViewerToken'); }
+        function setToken(token) { sessionStorage.setItem('logViewerToken', token); }
+        function clearToken() { sessionStorage.removeItem('logViewerToken'); sessionStorage.removeItem('logViewerUser'); }
+        function getAuthHeaders() { return { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' }; }
+
+        async function login() {
+            const username = document.getElementById('usernameInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+
+            if (!username || !password) {
+                showLoginError(t('enterCredentials'));
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/logs/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    setToken(result.data.token);
+                    sessionStorage.setItem('logViewerUser', JSON.stringify(result.data.admin));
+                    hideLoginError();
+                    showMainContent();
+                    updateUserInfo(result.data.admin);
+                    loadStats();
+                    loadLogs(1);
+                } else {
+                    showLoginError(result.message || t('invalidCredentials'));
+                }
+            } catch (error) {
+                showLoginError(t('connectionError'));
+            }
+        }
+
+        function logout() {
+            clearToken();
+            hideMainContent();
+            document.getElementById('usernameInput').value = '';
+            document.getElementById('passwordInput').value = '';
+        }
+
+        function updateUserInfo(admin) {
+            const userInfo = document.getElementById('userInfo');
+            userInfo.textContent = admin.displayName || admin.username;
+        }
+
+        function showLoginError(message) {
+            const errorEl = document.getElementById('loginError');
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        }
+
+        function hideLoginError() {
+            document.getElementById('loginError').classList.add('hidden');
+        }
+
+        function showMainContent() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+        }
+
+        function hideMainContent() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/logs/stats', { headers: getAuthHeaders() });
+                if (response.status === 401) { logout(); showLoginError(t('sessionExpired')); return; }
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('totalRequests').textContent = result.data.totalRequests.toLocaleString();
+                    document.getElementById('avgDuration').textContent = result.data.avgDuration.toFixed(2);
+                }
+            } catch (error) { console.error('Failed to load stats:', error); }
+        }
+
+        async function loadLogs(page = 1) {
+            currentPage = page;
+            pageSize = parseInt(document.getElementById('filterPageSize').value);
+            const tbody = document.getElementById('logTableBody');
+            tbody.innerHTML = `<tr><td colspan="6" class="loading">${t('loading')}</td></tr>`;
+
+            const params = new URLSearchParams();
+            params.append('page', page);
+            params.append('pageSize', pageSize);
+
+            ['filterMethod', 'filterPath', 'filterStatusCode', 'filterStartDate', 'filterEndDate'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && el.value) params.append(id.replace('filter', '').toLowerCase(), el.value);
+            });
+
+            try {
+                const response = await fetch(`/api/logs?${params.toString()}`, { headers: getAuthHeaders() });
+                if (response.status === 401) { logout(); showLoginError(t('sessionExpired')); return; }
+                const result = await response.json();
+                if (result.success) { renderLogs(result.data.logs); renderPagination(result.data); }
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="6" class="no-data">${t('loadFailed')}</td></tr>`;
+            }
+        }
+
+        function renderLogs(logs) {
+            const tbody = document.getElementById('logTableBody');
+            if (logs.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="no-data">${t('noLogs')}</td></tr>`; return; }
+            tbody.innerHTML = logs.map(log => `
+                <tr onclick="showDetail(${log.id})">
+                    <td>${log.id}</td>
+                    <td>${formatTimestamp(log.timestamp)}</td>
+                    <td><span class="badge ${getMethodBadgeClass(log.method)}">${log.method}</span></td>
+                    <td class="cell-path" title="${log.path}${log.queryString || ''}">${log.path}${log.queryString || ''}</td>
+                    <td><span class="badge ${getStatusBadgeClass(log.statusCode)}">${log.statusCode}</span></td>
+                    <td class="cell-duration">${log.duration} ms</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPagination(data) {
+            const pagination = document.getElementById('pagination');
+            const { page, totalPages, totalCount } = data;
+            if (totalPages <= 1) { pagination.innerHTML = `<span>${t('total')}: ${totalCount} ${t('records')}</span>`; return; }
+            let html = '';
+            if (page > 1) html += `<button class="btn btn-primary" onclick="loadLogs(${page - 1})">${t('prev')}</button>`;
+            html += `<span>${t('page')} ${page} ${t('of')} ${totalPages} (${totalCount} ${t('records')})</span>`;
+            if (page < totalPages) html += `<button class="btn btn-primary" onclick="loadLogs(${page + 1})">${t('next')}</button>`;
+            pagination.innerHTML = html;
+        }
+
+        async function showDetail(id) {
+            currentLogId = id;
+            const modal = document.getElementById('detailModal');
+            const modalBody = document.getElementById('modalBody');
+            modal.classList.remove('hidden');
+            modalBody.innerHTML = `<div class="loading">${t('loading')}</div>`;
+
+            try {
+                const response = await fetch(`/api/logs/${id}`, { headers: getAuthHeaders() });
+                if (response.status === 401) { closeModal(); logout(); showLoginError(t('sessionExpired')); return; }
+                const result = await response.json();
+
+                if (result.success) {
+                    const log = result.data;
+                    currentLogData = log;
+                    const isRequestBodyEmpty = !log.requestBody || log.requestBody.trim() === '' || log.requestBody === '{}';
+                    const hasRequestJwt = extractJwtFromHeaders(log.requestHeaders) !== null;
+                    const hasResponseJwt = extractJwtsFromResponseBody(log.responseBody).length > 0;
+                    const fullPath = `${log.path}${log.queryString || ''}`;
+                    const isPathLong = fullPath.length > 80;
+
+                    modalBody.innerHTML = `
+                        <div class="detail-grid">
+                            <div class="detail-item"><label>ID</label><span>${log.id}</span></div>
+                            <div class="detail-item"><label>${t('requestId')}</label><span>${log.requestId || '-'}</span></div>
+                            <div class="detail-item"><label>${t('timestamp')}</label><span>${log.timestamp || '-'}</span></div>
+                            <div class="detail-item"><label>${t('method')}</label><span class="badge ${getMethodBadgeClass(log.method)}">${log.method}</span></div>
+                            <div class="detail-item"><label>${t('statusCode')}</label><span class="badge ${getStatusBadgeClass(log.statusCode)}">${log.statusCode}</span></div>
+                            <div class="detail-item"><label>${t('duration')}</label><span>${log.duration} ms</span></div>
+                            <div class="detail-item"><label>${t('clientIp')}</label><span>${log.clientIpAddress || '-'}</span></div>
+                        </div>
+
+                        ${isPathLong ? `
+                        <!-- Path (Collapsible for long paths) -->
+                        <div class="collapsible-section" id="section-path">
+                            <div class="collapsible-header" onclick="toggleSection('section-path')">
+                                <h3>${t('path')}</h3>
+                                <div class="collapsible-header-spacer">
+                                    <span class="toggle-icon">▼</span>
+                                </div>
+                            </div>
+                            <div class="collapsible-content">
+                                <pre>${fullPath}</pre>
+                            </div>
+                        </div>
+                        ` : `
+                        <!-- Path (Inline for short paths) -->
+                        <div class="path-inline">
+                            <span class="path-inline-label">${t('path')}</span>
+                            <span class="path-inline-value">${fullPath}</span>
+                        </div>
+                        `}
+
+                        <!-- Request Headers (Collapsible) -->
+                        <div class="collapsible-section" id="section-headers">
+                            <div class="collapsible-header" onclick="toggleSection('section-headers')">
+                                <h3>${t('requestHeaders')}</h3>
+                                <div class="collapsible-header-spacer">
+                                    ${hasRequestJwt ? '<span class="badge badge-2xx">JWT</span>' : ''}
+                                    <span class="toggle-icon">▼</span>
+                                </div>
+                            </div>
+                            <div class="collapsible-content">
+                                <pre>${formatJson(log.requestHeaders)}</pre>
+                                ${renderJwtSection(log.requestHeaders)}
+                            </div>
+                        </div>
+
+                        <!-- Request Body -->
+                        ${isRequestBodyEmpty ? `
+                        <div class="path-inline">
+                            <span class="path-inline-label">${t('requestBody')}</span>
+                            <span class="path-inline-value"></span>
+                            <span class="badge-empty" style="margin-right: 1rem;">${t('empty')}</span>
+                        </div>
+                        ` : `
+                        <div class="collapsible-section" id="section-request-body">
+                            <div class="collapsible-header" onclick="toggleSection('section-request-body')">
+                                <h3>${t('requestBody')}</h3>
+                                <div class="collapsible-header-spacer">
+                                    <span class="toggle-icon">▼</span>
+                                </div>
+                            </div>
+                            <div class="collapsible-content">
+                                <pre>${formatJson(log.requestBody)}</pre>
+                            </div>
+                        </div>
+                        `}
+
+                        <!-- Response Body (Collapsible) -->
+                        <div class="collapsible-section" id="section-response-body">
+                            <div class="collapsible-header" onclick="toggleSection('section-response-body')">
+                                <h3>${t('responseBody')}</h3>
+                                <div class="collapsible-header-spacer">
+                                    ${hasResponseJwt ? '<span class="badge badge-2xx">JWT</span>' : ''}
+                                    <span class="toggle-icon">▼</span>
+                                </div>
+                            </div>
+                            <div class="collapsible-content">
+                                <pre>${formatJson(log.responseBody)}</pre>
+                                ${renderResponseJwtSection(log.responseBody)}
+                            </div>
+                        </div>
+
+                        <div id="replayResult" class="hidden"></div>
+                    `;
+                }
+            } catch (error) {
+                modalBody.innerHTML = `<div class="no-data">${t('loadFailed')}</div>`;
+            }
+        }
+
+        function replayCurrentRequest() {
+            if (currentLogId && confirm(t('replayConfirm'))) {
+                replayRequest(currentLogId);
+            }
+        }
+
+        function generateCurlCommand(log) {
+            if (!log) return '';
+
+            const baseUrl = window.location.origin;
+            const url = `${baseUrl}${log.path}${log.queryString || ''}`;
+            const method = log.method || 'GET';
+
+            let curl = `curl -X ${method} '${url}'`;
+
+            // 添加请求头
+            if (log.requestHeaders) {
+                try {
+                    const headers = JSON.parse(log.requestHeaders);
+                    const skipHeaders = ['Host', 'Content-Length', 'Transfer-Encoding', 'Connection'];
+                    for (const [key, value] of Object.entries(headers)) {
+                        if (!skipHeaders.some(h => h.toLowerCase() === key.toLowerCase())) {
+                            // 转义单引号
+                            const escapedValue = String(value).replace(/'/g, "'\\''");
+                            curl += ` \\\n  -H '${key}: ${escapedValue}'`;
+                        }
+                    }
+                } catch (e) {
+                    // 忽略解析错误
+                }
+            }
+
+            // 添加请求体
+            if (log.requestBody && log.requestBody.trim() !== '' && log.requestBody !== '{}') {
+                if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+                    // 转义单引号
+                    const escapedBody = log.requestBody.replace(/'/g, "'\\''");
+                    curl += ` \\\n  -d '${escapedBody}'`;
+                }
+            }
+
+            return curl;
+        }
+
+        async function copyCurlCommand() {
+            if (!currentLogData) {
+                alert(t('curlCopyFailed'));
+                return;
+            }
+
+            const curlCommand = generateCurlCommand(currentLogData);
+
+            try {
+                await navigator.clipboard.writeText(curlCommand);
+                // 临时显示成功提示
+                const btn = document.getElementById('copyCurlBtn');
+                const originalText = btn.textContent;
+                btn.textContent = '✓';
+                btn.style.background = '#10b981';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '';
+                }, 1500);
+            } catch (err) {
+                // 降级方案：使用传统复制方法
+                const textArea = document.createElement('textarea');
+                textArea.value = curlCommand;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    const btn = document.getElementById('copyCurlBtn');
+                    const originalText = btn.textContent;
+                    btn.textContent = '✓';
+                    btn.style.background = '#10b981';
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.style.background = '';
+                    }, 1500);
+                } catch (e) {
+                    alert(t('curlCopyFailed'));
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        async function replayRequest(id) {
+            const resultDiv = document.getElementById('replayResult');
+            if (!resultDiv) return;
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = `<div class="replay-section"><div class="loading">${t('replaying')}</div></div>`;
+
+            try {
+                const response = await fetch(`/api/logs/${id}/replay`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({})
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const data = result.data;
+                    resultDiv.innerHTML = `
+                        <div class="replay-section">
+                            <h3>${t('replayResult')}</h3>
+                            <div class="replay-result">
+                                <p><strong>Status:</strong> <span class="badge ${getStatusBadgeClass(data.response.statusCode)}">${data.response.statusCode}</span></p>
+                                <p><strong>Duration:</strong> ${data.response.duration} ms</p>
+                                <h5>Response Body:</h5>
+                                <pre>${formatJson(data.response.body)}</pre>
+                                ${renderResponseJwtSection(data.response.body)}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="replay-section"><div class="replay-result" style="color: var(--color-red-600);">Error: ${result.message}</div></div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="replay-section"><div class="replay-result" style="color: var(--color-red-600);">Error: ${error.message}</div></div>`;
+            }
+        }
+
+        function closeModal() { document.getElementById('detailModal').classList.add('hidden'); }
+
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.classList.toggle('collapsed');
+            }
+        }
+
+        function clearFilters() {
+            ['filterMethod', 'filterPath', 'filterStatusCode', 'filterStartDate', 'filterEndDate'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('filterPageSize').value = '20';
+            loadLogs(1);
+        }
+
+        function onPageSizeChange() { pageSize = parseInt(document.getElementById('filterPageSize').value); }
+
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return '-';
+            try { return new Date(timestamp).toLocaleString(); } catch { return timestamp; }
+        }
+
+        function formatJson(str) {
+            if (!str) return t('empty');
+            try { return JSON.stringify(JSON.parse(str), null, 2); } catch { return str; }
+        }
+
+        // JWT 解码相关函数
+        function base64UrlDecode(str) {
+            // Base64URL 转 Base64
+            let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+            // 补齐 padding
+            while (base64.length % 4) {
+                base64 += '=';
+            }
+            try {
+                return decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+            } catch (e) {
+                return atob(base64);
+            }
+        }
+
+        function decodeJwt(token) {
+            if (!token) return null;
+
+            // 移除 "Bearer " 前缀
+            token = token.replace(/^Bearer\s+/i, '').trim();
+
+            const parts = token.split('.');
+            if (parts.length !== 3) return null;
+
+            try {
+                const header = JSON.parse(base64UrlDecode(parts[0]));
+                const payload = JSON.parse(base64UrlDecode(parts[1]));
+                const signature = parts[2];
+
+                // 检查是否过期
+                let isExpired = false;
+                if (payload.exp) {
+                    isExpired = Date.now() >= payload.exp * 1000;
+                }
+
+                return { header, payload, signature, isExpired };
+            } catch (e) {
+                console.error('JWT decode error:', e);
+                return null;
+            }
+        }
+
+        function extractJwtFromHeaders(headersStr) {
+            if (!headersStr) return null;
+            try {
+                const headers = JSON.parse(headersStr);
+                // 查找 Authorization 头
+                const authHeader = headers['Authorization'] || headers['authorization'];
+                if (authHeader && authHeader.toLowerCase().includes('bearer')) {
+                    return authHeader;
+                }
+            } catch (e) {
+                // 尝试从字符串中提取
+                const match = headersStr.match(/Authorization['":\s]+Bearer\s+([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/i);
+                if (match) return 'Bearer ' + match[1];
+            }
+            return null;
+        }
+
+        // 从响应体中提取 JWT tokens
+        function extractJwtsFromResponseBody(bodyStr) {
+            if (!bodyStr) return [];
+            const tokens = [];
+            try {
+                const body = JSON.parse(bodyStr);
+                // 递归搜索对象中的 token 字段
+                function searchTokens(obj, path = '') {
+                    if (!obj || typeof obj !== 'object') return;
+                    for (const key of Object.keys(obj)) {
+                        const value = obj[key];
+                        const currentPath = path ? `${path}.${key}` : key;
+                        // 检查是否是 token 相关字段
+                        const tokenFields = ['access_token', 'accessToken', 'token', 'refresh_token', 'refreshToken', 'id_token', 'idToken', 'jwt'];
+                        if (tokenFields.some(f => key.toLowerCase() === f.toLowerCase())) {
+                            if (typeof value === 'string' && value.split('.').length === 3) {
+                                tokens.push({ field: currentPath, token: value });
+                            }
+                        }
+                        // 递归搜索嵌套对象
+                        if (typeof value === 'object' && value !== null) {
+                            searchTokens(value, currentPath);
+                        }
+                    }
+                }
+                searchTokens(body);
+            } catch (e) {
+                // 尝试正则匹配
+                const pattern = /["']?(access_token|accessToken|token|refresh_token|refreshToken|id_token|idToken|jwt)["']?\s*[":]\s*["']([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)["']/gi;
+                let match;
+                while ((match = pattern.exec(bodyStr)) !== null) {
+                    tokens.push({ field: match[1], token: match[2] });
+                }
+            }
+            return tokens;
+        }
+
+        function renderResponseJwtSection(bodyStr) {
+            const tokens = extractJwtsFromResponseBody(bodyStr);
+            if (tokens.length === 0) return '';
+
+            let html = '<div class="jwt-section" style="margin-top: 0.75rem;">';
+            html += `<h4>${t('jwtDecoded')} (Response)</h4>`;
+
+            for (const { field, token } of tokens) {
+                const decoded = decodeJwt(token);
+                if (!decoded) {
+                    html += `<div class="jwt-part"><div class="jwt-part-label">${field}</div><p class="jwt-invalid">${t('jwtInvalid')}</p></div>`;
+                    continue;
+                }
+
+                const statusBadge = decoded.isExpired
+                    ? `<span class="badge badge-4xx">${t('jwtExpired')}</span>`
+                    : `<span class="badge badge-2xx">${t('jwtValid')}</span>`;
+
+                html += `
+                    <div style="background: white; padding: 0.75rem; border-radius: 0.25rem; margin-bottom: 0.75rem; border: 1px solid #fcd34d;">
+                        <div style="font-weight: 600; color: #78350f; margin-bottom: 0.5rem;">${field} ${statusBadge}</div>
+                        <div class="jwt-part">
+                            <div class="jwt-part-label">${t('jwtHeader')}</div>
+                            <pre>${JSON.stringify(decoded.header, null, 2)}</pre>
+                        </div>
+                        <div class="jwt-part">
+                            <div class="jwt-part-label">${t('jwtPayload')}</div>
+                            <pre>${JSON.stringify(decoded.payload, null, 2)}</pre>
+                            ${decoded.payload.sub ? `<p style="margin-top: 0.5rem; font-size: 0.75rem;"><strong>${t('jwtUserId')}:</strong> ${decoded.payload.sub}</p>` : ''}
+                            ${decoded.payload.iat ? `<p style="font-size: 0.75rem;"><strong>${t('jwtIssuedAt')}:</strong> ${formatJwtTimestamp(decoded.payload.iat)}</p>` : ''}
+                            ${decoded.payload.exp ? `<p style="font-size: 0.75rem;"><strong>${t('jwtExpiresAt')}:</strong> ${formatJwtTimestamp(decoded.payload.exp)}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        function formatJwtTimestamp(timestamp) {
+            if (!timestamp) return '-';
+            try {
+                return new Date(timestamp * 1000).toLocaleString();
+            } catch {
+                return timestamp;
+            }
+        }
+
+        function renderJwtSection(headersStr) {
+            const jwtToken = extractJwtFromHeaders(headersStr);
+            if (!jwtToken) return '';
+
+            const decoded = decodeJwt(jwtToken);
+            if (!decoded) {
+                return `
+                    <div class="jwt-section">
+                        <h4>${t('jwtDecoded')}</h4>
+                        <p class="jwt-invalid">${t('jwtInvalid')}</p>
+                    </div>
+                `;
+            }
+
+            const statusBadge = decoded.isExpired
+                ? `<span class="badge badge-4xx">${t('jwtExpired')}</span>`
+                : `<span class="badge badge-2xx">${t('jwtValid')}</span>`;
+
+            return `
+                <div class="jwt-section">
+                    <h4>${t('jwtDecoded')} ${statusBadge}</h4>
+                    <div class="jwt-part">
+                        <div class="jwt-part-label">${t('jwtHeader')}</div>
+                        <pre>${JSON.stringify(decoded.header, null, 2)}</pre>
+                    </div>
+                    <div class="jwt-part">
+                        <div class="jwt-part-label">${t('jwtPayload')}</div>
+                        <pre>${JSON.stringify(decoded.payload, null, 2)}</pre>
+                        ${decoded.payload.sub ? `<p style="margin-top: 0.5rem; font-size: 0.75rem;"><strong>${t('jwtUserId')}:</strong> ${decoded.payload.sub}</p>` : ''}
+                        ${decoded.payload.iat ? `<p style="font-size: 0.75rem;"><strong>${t('jwtIssuedAt')}:</strong> ${formatJwtTimestamp(decoded.payload.iat)}</p>` : ''}
+                        ${decoded.payload.exp ? `<p style="font-size: 0.75rem;"><strong>${t('jwtExpiresAt')}:</strong> ${formatJwtTimestamp(decoded.payload.exp)}</p>` : ''}
+                    </div>
+                    <div class="jwt-part">
+                        <div class="jwt-part-label">${t('jwtSignature')}</div>
+                        <pre style="word-break: break-all;">${decoded.signature}</pre>
+                    </div>
+                </div>
+            `;
+        }
+
+        document.getElementById('detailModal').addEventListener('click', function(e) {
+            if (e.target === this || e.target.classList.contains('modal-wrapper')) closeModal();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'Enter' && !document.getElementById('loginScreen').classList.contains('hidden')) login();
+        });
+
+        window.onload = function() {
+            setLanguage(currentLang);
+            const token = getToken();
+            if (token) {
+                fetch('/api/logs/auth/me', { headers: getAuthHeaders() })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            showMainContent();
+                            updateUserInfo(result.data);
+                            loadStats();
+                            loadLogs(1);
+                        } else { clearToken(); }
+                    })
+                    .catch(() => { clearToken(); });
+            }
+        };
+
+        // Change Password Functions
+        function showChangePasswordModal() {
+            const modal = document.getElementById('changePasswordModal');
+            modal.classList.remove('hidden');
+
+            // Clear form and messages
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            hideChangePasswordMessage();
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('changePasswordModal').classList.add('hidden');
+        }
+
+        function showChangePasswordMessage(message, isSuccess = true) {
+            const messageEl = document.getElementById('changePasswordMessage');
+            messageEl.textContent = message;
+            messageEl.className = isSuccess ? 'change-password-success' : 'change-password-error';
+            messageEl.classList.remove('hidden');
+        }
+
+        function hideChangePasswordMessage() {
+            const messageEl = document.getElementById('changePasswordMessage');
+            messageEl.classList.add('hidden');
+        }
+
+        async function changePassword() {
+            const currentPassword = document.getElementById('currentPassword').value.trim();
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
+            const submitBtn = document.getElementById('changePasswordBtn');
+
+            // Validation
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showChangePasswordMessage(t('allFieldsRequired'), false);
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showChangePasswordMessage(t('newPasswordTooShort'), false);
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showChangePasswordMessage(t('passwordsNotMatch'), false);
+                return;
+            }
+
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.textContent = t('loading');
+
+            try {
+                const response = await fetch('/api/logs/auth/change-password', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        currentPassword: currentPassword,
+                        newPassword: newPassword
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showChangePasswordMessage(t('passwordChanged'), true);
+                    // Clear password fields
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+
+                    // Auto close modal after 2 seconds
+                    setTimeout(() => {
+                        closeChangePasswordModal();
+                    }, 2000);
+                } else {
+                    if (result.message === '当前密码错误' || result.message === 'Current password error') {
+                        showChangePasswordMessage(t('currentPasswordError'), false);
+                    } else {
+                        showChangePasswordMessage(result.message || t('passwordChangeFailed'), false);
+                    }
+                }
+            } catch (error) {
+                showChangePasswordMessage(t('passwordChangeFailed'), false);
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = t('confirm');
+            }
+        }
+
+        // Handle Enter key in change password modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const changePasswordModal = document.getElementById('changePasswordModal');
+                if (!changePasswordModal.classList.contains('hidden')) {
+                    changePassword();
+                }
+            }
+            if (e.key === 'Escape') {
+                if (!document.getElementById('changePasswordModal').classList.contains('hidden')) {
+                    closeChangePasswordModal();
+                }
+            }
+        });
+
+        // Close change password modal when clicking outside
+        document.getElementById('changePasswordModal').addEventListener('click', function(e) {
+            if (e.target === this || e.target.classList.contains('modal-wrapper')) {
+                closeChangePasswordModal();
+            }
+        });
+    </script>
+</body>
+</html>
